@@ -18,6 +18,7 @@ namespace MouseTest {
             Console.WriteLine("Press any button to start the simulation");
             Console.ReadKey();
             Mouse.SetCursor(new V2(200, 200));
+            Mouse.LeftClick("zzzz");
 
             MoreTest(10);
             Console.WriteLine("Press any button to Exit");
@@ -57,7 +58,6 @@ namespace MouseTest {
             RightUp = 0x00000010,
             Wheel = 0x800
         }
-        public const int DELAY_CLICK = 5;
         [DllImport("user32.dll")]
         static extern bool SetCursorPos(int x, int y);
         [DllImport("user32.dll")]
@@ -113,7 +113,6 @@ namespace MouseTest {
 
         public static void RightUp() {
             mouse_event((int)MouseEvents.RightUp, 0, 0, 0, 0);
-            Thread.Sleep(DELAY_CLICK);
         }
 
         public static void VerticalScroll(bool forward, int clicks = 1) {
