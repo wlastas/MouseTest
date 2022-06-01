@@ -21,6 +21,9 @@ namespace MouseTest {
             while (b_running) {
                 var cmd = Console.ReadKey();
                 switch (cmd.Key) {
+                    case ConsoleKey.Z:
+                        Console.Clear();
+                        break;
                     case ConsoleKey.E:
                         EnableConsoleQuickEdit();
                         break;
@@ -61,15 +64,14 @@ namespace MouseTest {
                 SentMouseCentr();
             }
             void Select() {
+                Console.Clear();
+                DisableConsoleQuickEdit();
                 var rc = GetCurrentConsoleRect();
                 Mouse.SetCursor(new V2(rc.left + 20, rc.top + 100));
-                Mouse.LeftDown("Start");
                 EnableConsoleQuickEdit();
-
-                Mouse.SetCursor(new V2(rc.left + 20 + 200, rc.top + 100 + 200));
-                //Mouse.LeftUp("Done", true);
-                ////MoreTest(10);
-                //Console.WriteLine("Press [Entrer] to Exit");
+                Mouse.LeftDown("Start");
+                Mouse.SetCursor(new V2(rc.left + 20 + 200, rc.top + 100 + 200), 5, false);
+                Mouse.LeftUp("Done", true);
             }
             void SentMouseCentr() {
                 var rc = GetCurrentConsoleRect();
@@ -102,6 +104,7 @@ namespace MouseTest {
             }
             void PrintInsruction() {
                 Console.WriteLine("Press [?] for draw this menu");
+                Console.WriteLine("Press [Z] for clear all");
                 Console.WriteLine("Press [B] for bad fast click");
                 Console.WriteLine("Press [C] to move cursor to Screen Centr");
                 Console.WriteLine("Press [S] to select same rect");

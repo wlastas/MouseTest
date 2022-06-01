@@ -145,11 +145,8 @@ namespace MouseTest {
         /// </summary>
         /// <param name="tp">target screen point</param>
         /// <param name="step">affects movement speed</param>
-        public static void SetCursor(V2 tp, int step = 5) {
+        public static void SetCursor(V2 tp, int step = 5, bool debug = true) {
             var ccp = GetCursorPosition();//current cursor position
-            //TODO: set false for stop spamming
-            var debug = true;
-
             var dx = Math.Abs(tp.X - ccp.X);
             var dy = Math.Abs(tp.Y - ccp.Y);
             if (dx < 2 && dy < 2) {
