@@ -12,27 +12,169 @@ using V2 = System.Drawing.PointF;
 namespace MouseTest {
     internal class Program {
         static void Main(string[] args) {
+            MoveWindoeToCentr();
             Console.WriteLine("Hello!");
-            Console.WriteLine("To intercept cursor control, press the left [Alt] or left [Shift] keys");
-            Console.WriteLine("Don't forget to change Thread.Sleep(20) Thread.Sleep(2) in the line 210");
-            Console.WriteLine("Press any button to start the simulation");
-            Console.ReadKey();
-            Mouse.SetCursor(new V2(200, 200));
-            Mouse.LeftClick("zzzz");
-
-            MoreTest(10);
-            Console.WriteLine("Press any button to Exit");
-            Console.ReadKey();
-        }
-
-        static void MoreTest(int count) {
+            Console.WriteLine("to intercept the cursor during the test, press [left Alt] key");
+            PrintInsruction();
+            bool b_running = true;
             var R = new Random();
-            for (int i = 0; i < count; i++) {
-                var np = new V2(R.Next(0, 500), R.Next(0, 500));
-                Mouse.SetCursor(np);
-                Thread.Sleep(200);
+            while (b_running) {
+                var cmd = Console.ReadKey();
+                switch (cmd.Key) {
+                    case ConsoleKey.E:
+                        EnableConsoleQuickEdit();
+                        break;
+                    case ConsoleKey.D:
+                        DisableConsoleQuickEdit();
+                        break;
+                    case ConsoleKey.B:
+                        BadClick();
+                        break;
+                    case ConsoleKey.S:
+                        Select();
+                        break;
+                    case ConsoleKey.C:
+                        RunTest();
+                        break;
+                    case ConsoleKey.M:
+                        MoreTest(10);
+                        break;
+                    case ConsoleKey.Escape:
+                        b_running = false;
+                        break;
+                    case ConsoleKey.Oem2:
+                        PrintInsruction();
+                        break;
+                    default:
+                        break;
+                }
+            }
+            void BadClick() {
+                DisableConsoleQuickEdit();
+                SentMouseCentr();
+                for (int i = 0; i < 10; i++) {
+                    Mouse.LeftClick("click_" + i);
+                    Thread.Sleep(R.Next(5, 600));
+                }
+            }
+            void RunTest() {
+                SentMouseCentr();
+            }
+            void Select() {
+                var rc = GetCurrentConsoleRect();
+                Mouse.SetCursor(new V2(rc.left + 20, rc.top + 100));
+                Mouse.LeftDown("Start");
+                EnableConsoleQuickEdit();
+
+                Mouse.SetCursor(new V2(rc.left + 20 + 200, rc.top + 100 + 200));
+                //Mouse.LeftUp("Done", true);
+                ////MoreTest(10);
+                //Console.WriteLine("Press [Entrer] to Exit");
+            }
+            void SentMouseCentr() {
+                var rc = GetCurrentConsoleRect();
+                var cx = rc.left + (rc.right - rc.left) / 2;
+                var cy = rc.top + (rc.bottom - rc.top) / 2;
+                var centr = new V2(cx, cy);
+                Mouse.SetCursor(centr);
+            }
+            RECT GetCurrentConsoleRect() {
+                RECT res;
+                var hWin = GetConsoleWindow();
+                GetWindowRect(hWin, out res);
+                return res;
+            }
+            void MoveWindoeToCentr() {
+                RECT wrc;
+                var hWin = GetConsoleWindow();
+                GetWindowRect(hWin, out wrc);
+                var scr = Screen.FromPoint(new Point(wrc.left, wrc.top));
+                var x = scr.WorkingArea.Left + (scr.WorkingArea.Width - (wrc.right - wrc.left)) / 2;
+                var y = scr.WorkingArea.Top + (scr.WorkingArea.Height - (wrc.bottom - wrc.top)) / 2;
+                MoveWindow(hWin, x, y, wrc.right - wrc.left, wrc.bottom - wrc.top, false);
+            }
+            void MoreTest(int count) {
+                for (int i = 0; i < count; i++) {
+                    var np = new V2(R.Next(0, 500), R.Next(0, 500));
+                    Mouse.SetCursor(np);
+                    Thread.Sleep(200);
+                }
+            }
+            void PrintInsruction() {
+                Console.WriteLine("Press [?] for draw this menu");
+                Console.WriteLine("Press [B] for bad fast click");
+                Console.WriteLine("Press [C] to move cursor to Screen Centr");
+                Console.WriteLine("Press [S] to select same rect");
+                Console.WriteLine("Press [E] to Enable Console QuickEdit");
+                Console.WriteLine("Press [D] tp Disable Consol QuickEdit");
+                Console.WriteLine("Press [Esc] to Exit");
             }
         }
+        static void DisableConsoleQuickEdit() {
+            IntPtr consoleHandle = GetStdHandle(STD_INPUT_HANDLE);
+
+            const uint ENABLE_QUICK_EDIT = 0x0040;
+
+            //IntPtr consoleHandle = GetConsoleWindow();
+            uint consoleMode;
+
+            // get current console mode
+            if (!GetConsoleMode(consoleHandle, out consoleMode)) {
+                // Error: Unable to get console mode.
+                Console.WriteLine(Marshal.GetLastWin32Error());
+                return;
+            }
+
+            // Clear the quick edit bit in the mode flags
+            consoleMode &= ~ENABLE_QUICK_EDIT;
+
+            // set the new mode
+            if (!SetConsoleMode(consoleHandle, consoleMode)) {
+                // ERROR: Unable to set console mode
+                Console.WriteLine(Marshal.GetLastWin32Error());
+            }
+        }
+        static void EnableConsoleQuickEdit() {
+            IntPtr consoleHandle = GetStdHandle(STD_INPUT_HANDLE);
+
+            const uint ENABLE_QUICK_EDIT = 0x0040;
+
+            //IntPtr consoleHandle = GetConsoleWindow();
+            uint consoleMode;
+
+            // get current console mode
+            if (!GetConsoleMode(consoleHandle, out consoleMode)) {
+                // Error: Unable to get console mode.
+                Console.WriteLine(Marshal.GetLastWin32Error());
+                return;
+            }
+
+            // Clear the quick edit bit in the mode flags
+            consoleMode |= ENABLE_QUICK_EDIT;
+
+            // set the new mode
+            if (!SetConsoleMode(consoleHandle, consoleMode)) {
+                // ERROR: Unable to set console mode
+                Console.WriteLine(Marshal.GetLastWin32Error());
+            }
+        }
+        const int STD_INPUT_HANDLE = -10;
+        [DllImport("kernel32.dll")]
+        static extern IntPtr GetStdHandle(int nStdHandle);
+        private struct RECT { public int left, top, right, bottom; }
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern IntPtr GetConsoleWindow();
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool GetWindowRect(IntPtr hWnd, out RECT rc);
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool MoveWindow(IntPtr hWnd, int x, int y, int w, int h, bool repaint);
+
+        [DllImport("kernel32.dll")]
+        static extern bool GetConsoleMode(IntPtr hConsoleHandle, out uint lpMode);
+
+        [DllImport("kernel32.dll")]
+        static extern bool SetConsoleMode(IntPtr hConsoleHandle, uint dwMode);
+       
     }
 
     public enum MouseButton {
@@ -42,228 +184,7 @@ namespace MouseTest {
         Extra1,
         Extra2,
     }
-    public delegate void AddToLogDelegate(string str, bool b_error = false);
-    public static class Mouse {
-        static Stopwatch sw = new Stopwatch();
-        private const int KEY_TOGGLED = 0x0001;
-        private const int KEY_PRESSED = 0x8000;
-        public enum MouseEvents {
-            LeftDown = 0x00000002,
-            LeftUp = 0x00000004,
-            MiddleDown = 0x00000020,
-            MiddleUp = 0x00000040,
-            Move = 0x00000001,
-            Absolute = 0x00008000,
-            RightDown = 0x00000008,
-            RightUp = 0x00000010,
-            Wheel = 0x800
-        }
-        [DllImport("user32.dll")]
-        static extern bool SetCursorPos(int x, int y);
-        [DllImport("user32.dll")]
-        static extern bool GetCursorPos(out Point lpPoint);
-     
-        [DllImport("user32.dll")]
-        static extern bool ScreenToClient(IntPtr hWnd, ref Point lpPoint);
-
-        public static V2 GetCursorPosition() {
-            Point lpPoint;
-            GetCursorPos(out lpPoint);
-            return new V2(lpPoint.X, lpPoint.Y);
-        }
-        [DllImport("user32.dll")]
-        static extern short GetKeyState(int nVirtKey);
-        public static bool HotKeyPressed(Keys key, int interv = 400, bool debug = true) {
-            if ((GetKeyState((int)key) & KEY_PRESSED) != 0) {
-                if (!down_time.ContainsKey(key) || (down_time.ContainsKey(key) && down_time[key].AddMilliseconds(interv) < DateTime.Now)) {
-                    down_time[key] = DateTime.Now;
-                    if (debug)
-                        AddToLog("HotKey " + key.ToString() + " used OK");
-                    return true;
-                }
-                else {
-                    //if(debug && AddToLog != null)
-                    //    AddToLog("HotKey " + key.ToString() + " was already pressed recently");
-                    return false;
-                }
-            }
-            return false;
-        }
-
-        static ConcurrentDictionary<Keys, DateTime> down_time = new ConcurrentDictionary<Keys, DateTime>();
-        //TODO here bug UP sametime for same mouse buttons => not detecting 
-        public static bool IsButtonDown(Keys key) {
-            return GetKeyState((int)key) < 0;
-        }
-
-        public static void RightClick(string _from) {
-            RightDown(_from);
-            RightUp();
-        }
-        static Stopwatch sw_right_down = new Stopwatch();
-        public static void RightDown(string _from, int mdi = 300) {
-            var elaps = sw_right_down.Elapsed.TotalMilliseconds;
-            if (elaps < mdi) {
-                Thread.Sleep((int)(mdi - elaps));
-                AddToLog(_from + " Try RightDown to fast");
-            }
-            mouse_event((int)MouseEvents.RightDown, 0, 0, 0, 0);
-            sw_right_down.Restart();
-        }
-
-        public static void RightUp() {
-            mouse_event((int)MouseEvents.RightUp, 0, 0, 0, 0);
-        }
-
-        public static void VerticalScroll(bool forward, int clicks = 1) {
-            if (forward)
-                mouse_event((int)MouseEvents.Wheel, 0, 0, clicks * 120, 0);
-            else
-                mouse_event((int)MouseEvents.Wheel, 0, 0, -(clicks * 120), 0);
-        }
-
-        [DllImport("user32.dll")]
-        private static extern void mouse_event(int dwFlags, int dx, int dy, int cButtons, int dwExtraInfo);
-
-        [DllImport("user32.dll")]
-        private static extern bool BlockInput(bool block);
-
-        public static void LeftClick(string _from) {
-            LeftDown(_from);
-            LeftUp(_from);
-        }
-        static DateTime last_left_down;
-        public delegate void MDownInfoDelegate(string write);
-        public const int min_down_interval = 300; //ms
-        public static void LeftDown(string from, int _mdi = min_down_interval) { //minimal_down_interval  //ms
-            bool debug = false;
-            if (last_left_down.AddMilliseconds(_mdi) < DateTime.Now) {
-                Thread.Sleep(_mdi);
-                AddToLog(from + " Try LeftDown to fast");
-            }
-            mouse_event((int)MouseEvents.LeftDown, 0, 0, 0, 0);
-            last_left_down = DateTime.Now;
-            left_down_count += 1;
-            last_set_id = 0;
-            if (debug) {
-                AddToLog("LeftDown.." + from);
-                AddToLog("LeftDown..[" + left_down_count + "]");
-            }
-        }
-
-        public static void LeftUp(string from) {
-            bool debug = true;
-            if (IsButtonDown(Keys.LButton)) {
-                //if (!from.Contains("StuckStop")) { 
-                //}
-                mouse_event((int)MouseEvents.LeftUp, 0, 0, 0, 0);
-                if (debug)
-                    AddToLog(from + " LeftUp OK");
-            }
-        }
-        //TODO: Dont try this
-        public static void blockInput(bool block) {
-            BlockInput(block);
-        }
-
-        public static DateTime last_setted;//last auto mouse setted time
-        public static int left_down_count;
-        public static int last_set_id;
-        /// <summary>
-        /// mouse movement simulation using linear interposition
-        /// </summary>
-        /// <param name="tp">target screen point</param>
-        /// <param name="step">affects movement speed</param>
-        public static void SetCursor(V2 tp, int step = 5) {
-            var ccp = GetCursorPosition();//current cursor position
-            //TODO: set false for stop spamming
-            var debug = true;
-          
-            var dx = Math.Abs(tp.X - ccp.X);
-            var dy = Math.Abs(tp.Y - ccp.Y);
-            if (dx < 2 && dy < 2) {
-                AddToLog("SetCursor.. low start delta");
-                return;
-            }
-         
-            if (step > 0) {
-                sw.Restart();
-                float dist = float.MaxValue;
-                bool get_elaps() { 
-                    var res = sw.Elapsed.Milliseconds < step * 200;
-                    return res;
-                }
-              
-                while (dist > 10 && get_elaps()) {
-                    if (b_alt)
-                        continue;
-                    var cp = GetCursorPosition(); //current point
-                    dist = tp.GetDistance(cp);
-                    var dir = tp.Subtract(cp);
-                    dir = dir.Normalize();
-                    var nsp = dir.Scale(dist / step);
-                    var nt = cp.Increase(nsp);
-                    if(debug)
-                        AddToLog("nt=" + nt.ToString());
-                    SetCursorPos((int)nt.X, (int)nt.Y);
-                    MouseMove();
-                 
-                    //TODO: correct next delay u need 2-3 is ok 10+ for debug ONLY
-                    Thread.Sleep(20);
-                }
-            }
-            if (debug)
-                AddToLog("nt=" + tp.ToString());
-            SetCursorPos((int)tp.X, (int)tp.Y); //last path part
-            MouseMove();
-           
-        }
-        static bool b_alt {
-            get {
-                var alt = IsKeyDown(Keys.LMenu);
-              
-                return alt;
-            }
-        }
-        public static bool IsKeyDown(Keys key) {
-            return GetKeyState((int)key) < 0;
-        }
-        static void MouseMove() {
-            mouse_event((int)MouseEvents.Move, 0, 0, 0, 0);
-        }
-        static V2 Scale(this V2 value, float scale) {
-            return new V2(value.X * scale, value.Y * scale);
-        }
-        static float GetDistance(this V2 value1, V2 value2) {
-            float x = value1.X - value2.X;
-            float y = value1.Y - value2.Y;
-
-            var res = (float)Math.Sqrt((x * x) + (y * y));
-            return res;
-        }
-        static float Length(this V2 p) {
-            return (float)Math.Sqrt((p.X * p.X) + (p.Y * p.Y));
-        }
-        public static V2 Subtract(this V2 source, V2 targ) {
-            return new V2(source.X - targ.X, source.Y - targ.Y);
-        }
-        static V2 Increase(this V2 source, V2 targ) {
-            return new V2(source.X + targ.X, source.Y + targ.Y);
-        }
-        static V2 Normalize(this V2 p) {
-            float length = p.Length();
-            var res = new V2(p.X, p.Y);
-            if (length > 0) {
-                float inv = 1.0f / length;
-                res.X *= inv;
-                res.Y *= inv;
-            }
-            return res;
-        }
-        static void AddToLog(string inp) {
-            Console.WriteLine(inp);
-        }
-    }
+   
 }
 
    
